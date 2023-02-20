@@ -59,8 +59,8 @@ module "test-vm-landing-untrusted-ew4-0" {
     image = "projects/debian-cloud/global/images/family/debian-10"
   }
   options = {
-    spot                      = true
-    termination_action        = "STOP"
+    spot               = true
+    termination_action = "STOP"
   }
   metadata = {
     startup-script = <<EOF
@@ -113,8 +113,8 @@ module "test-vm-landing-trusted-ew4-0" {
     image = "projects/debian-cloud/global/images/family/debian-10"
   }
   options = {
-    spot                      = true
-    termination_action        = "STOP"
+    spot               = true
+    termination_action = "STOP"
   }
   metadata = {
     startup-script = <<EOF
@@ -142,8 +142,8 @@ module "test-vm-dev-ew1-0" {
     image = "projects/debian-cloud/global/images/family/debian-10"
   }
   options = {
-    spot                      = true
-    termination_action        = "STOP"
+    spot               = true
+    termination_action = "STOP"
   }
   metadata = {
     startup-script = <<EOF
@@ -227,8 +227,8 @@ module "test-vm-prod-ew4-0" {
     image = "projects/debian-cloud/global/images/family/debian-10"
   }
   options = {
-    spot                      = true
-    termination_action        = "STOP"
+    spot               = true
+    termination_action = "STOP"
   }
   metadata = {
     startup-script = <<EOF

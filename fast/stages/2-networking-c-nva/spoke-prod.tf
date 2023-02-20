@@ -95,12 +95,12 @@ module "prod-spoke-firewall" {
 }
 
 module "peering-prod" {
-  source        = "../../../modules/net-vpc-peering"
-  prefix        = "prod-peering-0"
-  local_network = module.prod-spoke-vpc.self_link
-  peer_network  = module.landing-trusted-vpc.self_link
+  source                     = "../../../modules/net-vpc-peering"
+  prefix                     = "prod-peering-0"
+  local_network              = module.prod-spoke-vpc.self_link
+  peer_network               = module.landing-trusted-vpc.self_link
   export_local_custom_routes = true
-  export_peer_custom_routes = true
+  export_peer_custom_routes  = true
 }
 
 # Create delegated grants for stage3 service accounts

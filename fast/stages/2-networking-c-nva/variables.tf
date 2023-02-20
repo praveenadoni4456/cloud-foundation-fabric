@@ -124,7 +124,7 @@ variable "l7ilb_subnets" {
 
 variable "nva_asn" {
   description = "ASN for NVAs based on regions."
-  type = map(string)
+  type        = map(string)
   default = {
     "primary"   = "65514"
     "secondary" = "65513"
@@ -323,6 +323,6 @@ variable "vpn_onprem_configs" {
 
 variable "zones" {
   description = "Zones definitions."
-  type = list(string)
-  default = ["b","c"]
+  type        = list(string)
+  default     = ["b", "c"]
 }

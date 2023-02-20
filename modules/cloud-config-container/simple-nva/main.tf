@@ -38,7 +38,7 @@ locals {
         owner       = "root"
         permissions = "0744"
       }
-    },{
+      }, {
       for path, attrs in var.files : path => {
         content     = attrs.content,
         owner       = attrs.owner,
@@ -47,14 +47,14 @@ locals {
     },
     var.enable_bgp ? {
       "/etc/frr/daemons" = {
-      content     = templatefile(local.daemons, local.config_variables)
-      owner       = "frr"
-      permissions = "0744"
+        content     = templatefile(local.daemons, local.config_variables)
+        owner       = "frr"
+        permissions = "0744"
       }
       "/etc/frr/frr.conf" = {
-      content     = file(local.frr_config)
-      owner       = "frr"
-      permissions = "0744"
+        content     = file(local.frr_config)
+        owner       = "frr"
+        permissions = "0744"
       }
     } : {}
   )

@@ -15,9 +15,9 @@
  */
 
 locals {
-  nva_locality = {for item in flatten([
+  nva_locality = { for item in flatten([
     for priority, region in var.regions : [
-      for zone in var.zones: {
+      for zone in var.zones : {
         "${region}-${zone}" = {
           region  = region
           trigram = local.region_shortnames[region]
@@ -25,7 +25,7 @@ locals {
         }
       }
     ]
-  ]): keys(item)[0] => values(item)[0]}
+  ]) : keys(item)[0] => values(item)[0] }
 
   # routing_config should be aligned to the NVA network interfaces - i.e.
   # local.routing_config[0] sets up the first interface, and so on.
@@ -121,7 +121,7 @@ module "nva" {
     termination_action        = "STOP"
   }
   metadata = {
-    user-data = module.nva-bgp-cloud-config[each.key].cloud_config
+    user-data      = module.nva-bgp-cloud-config[each.key].cloud_config
     startup-script = file("./data/nva-startup-script.sh")
   }
 }
