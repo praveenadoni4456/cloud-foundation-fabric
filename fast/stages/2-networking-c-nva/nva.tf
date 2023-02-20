@@ -15,12 +15,17 @@
  */
 
 locals {
-  nva_locality = {
-    europe-west1-b = { region = "europe-west1", trigram = "ew1", zone = "b" },
-    europe-west1-c = { region = "europe-west1", trigram = "ew1", zone = "c" },
-    europe-west4-b = { region = "europe-west4", trigram = "ew4", zone = "b" },
-    europe-west4-c = { region = "europe-west4", trigram = "ew4", zone = "c" },
-  }
+  nva_locality = {for item in flatten([
+    for priority, region in var.regions : [
+      for zone in var.zones: {
+        "${region}-${zone}" = {
+          region  = region
+          trigram = local.region_shortnames[region]
+          zone    = zone
+        }
+      }
+    ]
+  ]): keys(item)[0] => values(item)[0]}
 
   # routing_config should be aligned to the NVA network interfaces - i.e.
   # local.routing_config[0] sets up the first interface, and so on.
@@ -28,83 +33,58 @@ locals {
     {
       name = "untrusted"
       routes = [
-        var.custom_adv.gcp_landing_untrusted_ew1,
-        var.custom_adv.gcp_landing_untrusted_ew4,
+        var.custom_adv.gcp_landing_untrusted_primary,
+        var.custom_adv.gcp_landing_untrusted_secondary,
       ]
     },
     {
       name = "trusted"
       routes = [
-        var.custom_adv.gcp_dev_ew1,
-        var.custom_adv.gcp_dev_ew4,
-        var.custom_adv.gcp_landing_trusted_ew1,
-        var.custom_adv.gcp_landing_trusted_ew4,
-        var.custom_adv.gcp_prod_ew1,
-        var.custom_adv.gcp_prod_ew4,
+        var.custom_adv.rfc_1918_10,
+        var.custom_adv.rfc_1918_172,
+        var.custom_adv.rfc_1918_192,
+        var.custom_adv.gcp_landing_trusted_primary,
+        var.custom_adv.gcp_landing_trusted_secondary
       ]
     },
   ]
-
-  nva_configs = {
-    europe-west1-b = {
-      region       = "europe-west1",
-      zone         = "b",
-      ip_untrusted = cidrhost(module.landing-untrusted-vpc.subnet_ips["europe-west1/landing-untrusted-default-ew1"], 101)
-      ip_trusted   = cidrhost(module.landing-trusted-vpc.subnet_ips["europe-west1/landing-trusted-default-ew1"], 101)
-    },
-    europe-west1-c = {
-      region       = "europe-west1",
-      zone         = "c",
-      ip_untrusted = cidrhost(module.landing-untrusted-vpc.subnet_ips["europe-west1/landing-untrusted-default-ew1"], 102)
-      ip_trusted   = cidrhost(module.landing-trusted-vpc.subnet_ips["europe-west1/landing-trusted-default-ew1"], 102)
-    },
-    europe-west4-b = {
-      region       = "europe-west4",
-      zone         = "b",
-      ip_untrusted = cidrhost(module.landing-untrusted-vpc.subnet_ips["europe-west4/landing-untrusted-default-ew4"], 101)
-      ip_trusted   = cidrhost(module.landing-trusted-vpc.subnet_ips["europe-west4/landing-trusted-default-ew4"], 101)
-    },
-    europe-west4-c = {
-      region       = "europe-west4",
-      zone         = "c",
-      ip_untrusted = cidrhost(module.landing-untrusted-vpc.subnet_ips["europe-west4/landing-untrusted-default-ew4"], 102)
-      ip_trusted   = cidrhost(module.landing-trusted-vpc.subnet_ips["europe-west4/landing-trusted-default-ew4"], 102)
-    }
-  }
 }
 
 # NVA configs
-module "nva-cloud-config" {
+module "nva-bgp-cloud-config" {
+  for_each             = local.nva_locality
   source               = "../../../modules/cloud-config-container/simple-nva"
+  enable_bgp           = true
   enable_health_checks = true
   network_interfaces   = local.routing_config
+  frr_config           = "./bgp-files/${each.value.trigram}${each.value.zone}"
 }
 
 resource "google_compute_address" "nva_static_ip_untrusted" {
-  for_each     = local.nva_configs
-  name         = "nva-ip-untrusted-${var.region_trigram[each.value.region]}-${each.value.zone}"
+  for_each     = local.nva_locality
+  name         = "nva-ip-untrusted-${each.value.trigram}-${each.value.zone}"
   project      = module.landing-project.project_id
-  subnetwork   = module.landing-untrusted-vpc.subnet_self_links["${each.value.region}/landing-untrusted-default-${var.region_trigram[each.value.region]}"]
+  subnetwork   = module.landing-untrusted-vpc.subnet_self_links["${each.value.region}/landing-untrusted-default-${each.value.trigram}"]
   address_type = "INTERNAL"
-  address      = each.value.ip_untrusted
+  address      = cidrhost(module.landing-untrusted-vpc.subnet_ips["${each.value.region}/landing-untrusted-default-${each.value.trigram}"], 101 + index(var.zones, each.value.zone))
   region       = each.value.region
 }
 
 resource "google_compute_address" "nva_static_ip_trusted" {
-  for_each     = local.nva_configs
-  name         = "nva-ip-trusted-${var.region_trigram[each.value.region]}-${each.value.zone}"
+  for_each     = local.nva_locality
+  name         = "nva-ip-trusted-${each.value.trigram}-${each.value.zone}"
   project      = module.landing-project.project_id
-  subnetwork   = module.landing-trusted-vpc.subnet_self_links["${each.value.region}/landing-trusted-default-${var.region_trigram[each.value.region]}"]
+  subnetwork   = module.landing-trusted-vpc.subnet_self_links["${each.value.region}/landing-trusted-default-${each.value.trigram}"]
   address_type = "INTERNAL"
-  address      = each.value.ip_trusted
+  address      = cidrhost(module.landing-trusted-vpc.subnet_ips["${each.value.region}/landing-trusted-default-${each.value.trigram}"], 101 + index(var.zones, each.value.zone))
   region       = each.value.region
 }
 
 module "nva" {
-  for_each       = local.nva_configs
+  for_each       = local.nva_locality
   source         = "../../../modules/compute-vm"
   project_id     = module.landing-project.project_id
-  name           = "nva-${var.region_trigram[each.value.region]}-${each.value.zone}"
+  name           = "nva-${each.value.trigram}-${each.value.zone}"
   zone           = "${each.value.region}-${each.value.zone}"
   instance_type  = "e2-standard-2"
   tags           = ["nva"]
@@ -112,7 +92,7 @@ module "nva" {
   network_interfaces = [
     {
       network    = module.landing-untrusted-vpc.self_link
-      subnetwork = module.landing-untrusted-vpc.subnet_self_links["${each.value.region}/landing-untrusted-default-${var.region_trigram[each.value.region]}"]
+      subnetwork = module.landing-untrusted-vpc.subnet_self_links["${each.value.region}/landing-untrusted-default-${each.value.trigram}"]
       nat        = false
       addresses = {
         external = null
@@ -121,7 +101,7 @@ module "nva" {
     },
     {
       network    = module.landing-trusted-vpc.self_link
-      subnetwork = module.landing-trusted-vpc.subnet_self_links["${each.value.region}/landing-trusted-default-${var.region_trigram[each.value.region]}"]
+      subnetwork = module.landing-trusted-vpc.subnet_self_links["${each.value.region}/landing-trusted-default-${each.value.trigram}"]
       nat        = false
       addresses = {
         external = null
@@ -141,116 +121,7 @@ module "nva" {
     termination_action        = "STOP"
   }
   metadata = {
-    user-data = module.nva-cloud-config.cloud_config
-  }
-}
-
-module "nva-template" {
-  for_each        = local.nva_locality
-  source          = "../../../modules/compute-vm"
-  project_id      = module.landing-project.project_id
-  name            = "nva-template-${each.value.trigram}-${each.value.zone}"
-  zone            = "${each.value.region}-${each.value.zone}"
-  instance_type   = "e2-standard-2"
-  tags            = ["nva"]
-  create_template = true
-  can_ip_forward  = true
-  network_interfaces = [
-    {
-      network    = module.landing-untrusted-vpc.self_link
-      subnetwork = module.landing-untrusted-vpc.subnet_self_links["${each.value.region}/landing-untrusted-default-${each.value.trigram}"]
-      nat        = false
-      addresses  = null
-    },
-    {
-      network    = module.landing-trusted-vpc.self_link
-      subnetwork = module.landing-trusted-vpc.subnet_self_links["${each.value.region}/landing-trusted-default-${each.value.trigram}"]
-      nat        = false
-      addresses  = null
-    }
-  ]
-  boot_disk = {
-    image = "projects/cos-cloud/global/images/family/cos-stable"
-    size  = 10
-    type  = "pd-balanced"
-  }
-  options = {
-    allow_stopping_for_update = true
-    deletion_protection       = false
-    spot                      = true
-    termination_action        = "STOP"
-  }
-  metadata = {
-    user-data = module.nva-cloud-config.cloud_config
-  }
-}
-
-module "nva-mig" {
-  for_each          = local.nva_locality
-  source            = "../../../modules/compute-mig"
-  project_id        = module.landing-project.project_id
-  location          = each.value.region
-  name              = "nva-cos-${var.region_trigram[each.value.region]}-${each.value.zone}"
-  instance_template = module.nva-template[each.key].template.self_link
-  target_size       = 1
-  auto_healing_policies = {
-    initial_delay_sec = 30
-  }
-  health_check_config = {
-    enable_logging = true
-    tcp = {
-      port = 22
-    }
-  }
-}
-
-module "ilb-nva-untrusted" {
-  for_each      = { for l in local.nva_locality : l.region => l.trigram... }
-  source        = "../../../modules/net-ilb"
-  project_id    = module.landing-project.project_id
-  region        = each.key
-  name          = "nva-untrusted-${each.value.0}"
-  service_label = var.prefix
-  global_access = true
-  vpc_config = {
-    network    = module.landing-untrusted-vpc.self_link
-    subnetwork = module.landing-untrusted-vpc.subnet_self_links["${each.key}/landing-untrusted-default-${each.value.0}"]
-  }
-  backends = [
-    for key, _ in local.nva_locality : {
-      group = module.nva-mig[key].group_manager.instance_group
-    } if local.nva_locality[key].region == each.key
-  ]
-  health_check_config = {
-    enable_logging = true
-    tcp = {
-      port = 22
-    }
-  }
-}
-
-
-module "ilb-nva-trusted" {
-  for_each      = { for l in local.nva_locality : l.region => l.trigram... }
-  source        = "../../../modules/net-ilb"
-  project_id    = module.landing-project.project_id
-  region        = each.key
-  name          = "nva-trusted-${each.value.0}"
-  service_label = var.prefix
-  global_access = true
-  vpc_config = {
-    network    = module.landing-trusted-vpc.self_link
-    subnetwork = module.landing-trusted-vpc.subnet_self_links["${each.key}/landing-trusted-default-${each.value.0}"]
-  }
-  backends = [
-    for key, _ in local.nva_locality : {
-      group = module.nva-mig[key].group_manager.instance_group
-    } if local.nva_locality[key].region == each.key
-  ]
-  health_check_config = {
-    enable_logging = true
-    tcp = {
-      port = 22
-    }
+    user-data = module.nva-bgp-cloud-config[each.key].cloud_config
+    startup-script = file("./data/nva-startup-script.sh")
   }
 }

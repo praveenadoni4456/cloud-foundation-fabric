@@ -18,23 +18,23 @@
 
 # # Untrusted (Landing)
 
-# module "test-vm-landing-untrusted-ew1-0" {
+# module "test-vm-landing-untrusted-primary-0" {
 #   source     = "../../../modules/compute-vm"
 #   project_id = module.landing-project.project_id
-#   zone       = "europe-west1-b"
-#   name       = "test-vm-lnd-unt-ew1-0"
+#   zone       = "${var.regions.primary}-b"
+#   name       = "test-vm-lnd-unt-primary-0"
 #   network_interfaces = [{
 #     network    = module.landing-untrusted-vpc.self_link
-#     subnetwork = module.landing-untrusted-vpc.subnet_self_links["europe-west1/landing-untrusted-default-ew1"]
+#     subnetwork = module.landing-untrusted-vpc.subnet_self_links["${var.regions.primary}/landing-untrusted-default-${local.region_shortnames[var.regions.primary]}"]
 #   }]
-#   tags                   = ["ew1", "ssh"]
+#   tags                   = ["primary", "ssh"]
 #   service_account_create = true
 #   boot_disk = {
 #     image = "projects/debian-cloud/global/images/family/debian-10"
 #   }
 #   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
+#     spot               = true
+#     termination_action = "STOP"
 #   }
 #   metadata = {
 #     startup-script = <<EOF
@@ -44,51 +44,51 @@
 #   }
 # }
 
-# module "test-vm-landing-untrusted-ew4-0" {
-#   source     = "../../../modules/compute-vm"
-#   project_id = module.landing-project.project_id
-#   zone       = "europe-west4-a"
-#   name       = "test-vm-lnd-unt-ew4-0"
-#   network_interfaces = [{
-#     network    = module.landing-untrusted-vpc.self_link
-#     subnetwork = module.landing-untrusted-vpc.subnet_self_links["europe-west4/landing-untrusted-default-ew4"]
-#   }]
-#   tags                   = ["ew4", "ssh"]
-#   service_account_create = true
-#   boot_disk = {
-#     image = "projects/debian-cloud/global/images/family/debian-10"
-#   }
-#   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
-#   }
-#   metadata = {
-#     startup-script = <<EOF
-#       apt update
-#       apt install iputils-ping bind9-dnsutils
-#     EOF
-#   }
-# }
+module "test-vm-landing-untrusted-ew4-0" {
+  source     = "../../../modules/compute-vm"
+  project_id = module.landing-project.project_id
+  zone       = "europe-west4-a"
+  name       = "test-vm-lnd-unt-ew4-0"
+  network_interfaces = [{
+    network    = module.landing-untrusted-vpc.self_link
+    subnetwork = module.landing-untrusted-vpc.subnet_self_links["europe-west4/landing-untrusted-default-ew4"]
+  }]
+  tags                   = ["ew4", "ssh"]
+  service_account_create = true
+  boot_disk = {
+    image = "projects/debian-cloud/global/images/family/debian-10"
+  }
+  options = {
+    spot                      = true
+    termination_action        = "STOP"
+  }
+  metadata = {
+    startup-script = <<EOF
+      apt update
+      apt install iputils-ping bind9-dnsutils
+    EOF
+  }
+}
 
 # # Trusted (hub)
 
-# module "test-vm-landing-trusted-ew1-0" {
+# module "test-vm-landing-trusted-primary-0" {
 #   source     = "../../../modules/compute-vm"
 #   project_id = module.landing-project.project_id
-#   zone       = "europe-west1-b"
-#   name       = "test-vm-lnd-tru-ew1-0"
+#   zone       = "${var.regions.primary}-b"
+#   name       = "test-vm-lnd-tru-primary-0"
 #   network_interfaces = [{
 #     network    = module.landing-trusted-vpc.self_link
-#     subnetwork = module.landing-trusted-vpc.subnet_self_links["europe-west1/landing-trusted-default-ew1"]
+#     subnetwork = module.landing-trusted-vpc.subnet_self_links["${var.regions.primary}/landing-trusted-default-${local.region_shortnames[var.regions.primary]}"]
 #   }]
-#   tags                   = ["ew1", "ssh"]
+#   tags                   = ["primary", "ssh"]
 #   service_account_create = true
 #   boot_disk = {
 #     image = "projects/debian-cloud/global/images/family/debian-10"
 #   }
 #   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
+#     spot               = true
+#     termination_action = "STOP"
 #   }
 #   metadata = {
 #     startup-script = <<EOF
@@ -98,79 +98,79 @@
 #   }
 # }
 
-# module "test-vm-landing-trusted-ew4-0" {
-#   source     = "../../../modules/compute-vm"
-#   project_id = module.landing-project.project_id
-#   zone       = "europe-west4-a"
-#   name       = "test-vm-lnd-tru-ew4-0"
-#   network_interfaces = [{
-#     network    = module.landing-trusted-vpc.self_link
-#     subnetwork = module.landing-trusted-vpc.subnet_self_links["europe-west4/landing-trusted-default-ew4"]
-#   }]
-#   tags                   = ["ew4", "ssh"]
-#   service_account_create = true
-#   boot_disk = {
-#     image = "projects/debian-cloud/global/images/family/debian-10"
-#   }
-#   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
-#   }
-#   metadata = {
-#     startup-script = <<EOF
-#       apt update
-#       apt install iputils-ping bind9-dnsutils
-#     EOF
-#   }
-# }
+module "test-vm-landing-trusted-ew4-0" {
+  source     = "../../../modules/compute-vm"
+  project_id = module.landing-project.project_id
+  zone       = "europe-west4-a"
+  name       = "test-vm-lnd-tru-ew4-0"
+  network_interfaces = [{
+    network    = module.landing-trusted-vpc.self_link
+    subnetwork = module.landing-trusted-vpc.subnet_self_links["europe-west4/landing-trusted-default-ew4"]
+  }]
+  tags                   = ["ew4", "ssh"]
+  service_account_create = true
+  boot_disk = {
+    image = "projects/debian-cloud/global/images/family/debian-10"
+  }
+  options = {
+    spot                      = true
+    termination_action        = "STOP"
+  }
+  metadata = {
+    startup-script = <<EOF
+      apt update
+      apt install iputils-ping bind9-dnsutils
+    EOF
+  }
+}
 
 # # Dev spoke
 
-# module "test-vm-dev-ew1-0" {
-#   source     = "../../../modules/compute-vm"
-#   project_id = module.dev-spoke-project.project_id
-#   zone       = "europe-west1-b"
-#   name       = "test-vm-dev-ew1-0"
-#   network_interfaces = [{
-#     network = module.dev-spoke-vpc.self_link
-#     # change the subnet name to match the values you are actually using
-#     subnetwork = module.dev-spoke-vpc.subnet_self_links["europe-west1/dev-default-ew1"]
-#   }]
-#   tags                   = ["ew1", "ssh"]
-#   service_account_create = true
-#   boot_disk = {
-#     image = "projects/debian-cloud/global/images/family/debian-10"
-#   }
-#   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
-#   }
-#   metadata = {
-#     startup-script = <<EOF
-#       apt update
-#       apt install iputils-ping bind9-dnsutils
-#     EOF
-#   }
-# }
+module "test-vm-dev-ew1-0" {
+  source     = "../../../modules/compute-vm"
+  project_id = module.dev-spoke-project.project_id
+  zone       = "europe-west1-b"
+  name       = "test-vm-dev-ew1-0"
+  network_interfaces = [{
+    network = module.dev-spoke-vpc.self_link
+    # change the subnet name to match the values you are actually using
+    subnetwork = module.dev-spoke-vpc.subnet_self_links["europe-west1/dev-default-ew1"]
+  }]
+  tags                   = ["ew1", "ssh"]
+  service_account_create = true
+  boot_disk = {
+    image = "projects/debian-cloud/global/images/family/debian-10"
+  }
+  options = {
+    spot                      = true
+    termination_action        = "STOP"
+  }
+  metadata = {
+    startup-script = <<EOF
+      apt update
+      apt install iputils-ping bind9-dnsutils
+    EOF
+  }
+}
 
-# module "test-vm-dev-ew4-0" {
+# module "test-vm-dev-secondary-0" {
 #   source     = "../../../modules/compute-vm"
 #   project_id = module.dev-spoke-project.project_id
-#   zone       = "europe-west4-a"
-#   name       = "test-vm-dev-ew4-0"
+#   zone       = "${var.regions.secondary}-a"
+#   name       = "test-vm-dev-secondary-0"
 #   network_interfaces = [{
 #     network = module.dev-spoke-vpc.self_link
 #     # change the subnet name to match the values you are actually using
-#     subnetwork = module.dev-spoke-vpc.subnet_self_links["europe-west4/dev-default-ew4"]
+#     subnetwork = module.dev-spoke-vpc.subnet_self_links["${var.regions.secondary}/dev-default-${local.region_shortnames[var.regions.secondary]}"]
 #   }]
-#   tags                   = ["ew4", "ssh"]
+#   tags                   = ["secondary", "ssh"]
 #   service_account_create = true
 #   boot_disk = {
 #     image = "projects/debian-cloud/global/images/family/debian-10"
 #   }
 #   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
+#     spot               = true
+#     termination_action = "STOP"
 #   }
 #   metadata = {
 #     startup-script = <<EOF
@@ -182,17 +182,17 @@
 
 # # Prod spoke
 
-# module "test-vm-prod-ew1-0" {
+# module "test-vm-prod-primary-0" {
 #   source     = "../../../modules/compute-vm"
 #   project_id = module.prod-spoke-project.project_id
-#   zone       = "europe-west1-b"
-#   name       = "test-vm-prod-ew1-0"
+#   zone       = "${var.regions.primary}-b"
+#   name       = "test-vm-prod-primary-0"
 #   network_interfaces = [{
 #     network = module.prod-spoke-vpc.self_link
 #     # change the subnet name to match the values you are actually using
-#     subnetwork = module.prod-spoke-vpc.subnet_self_links["europe-west1/prod-default-ew1"]
+#     subnetwork = module.prod-spoke-vpc.subnet_self_links["${var.regions.primary}/prod-default-${local.region_shortnames[var.regions.primary]}"]
 #   }]
-#   tags                   = ["ew1", "ssh"]
+#   tags                   = ["primary", "ssh"]
 #   service_account_create = true
 #   boot_disk = {
 #     image = "projects/debian-cloud/global/images/family/debian-10"
@@ -200,8 +200,8 @@
 #     size  = 10
 #   }
 #   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
+#     spot               = true
+#     termination_action = "STOP"
 #   }
 #   metadata = {
 #     startup-script = <<EOF
@@ -211,29 +211,29 @@
 #   }
 # }
 
-# module "test-vm-prod-ew4-0" {
-#   source     = "../../../modules/compute-vm"
-#   project_id = module.prod-spoke-project.project_id
-#   zone       = "europe-west4-a"
-#   name       = "test-vm-prod-ew4-0"
-#   network_interfaces = [{
-#     network = module.prod-spoke-vpc.self_link
-#     # change the subnet name to match the values you are actually using
-#     subnetwork = module.prod-spoke-vpc.subnet_self_links["europe-west4/prod-default-ew4"]
-#   }]
-#   tags                   = ["ew4", "ssh"]
-#   service_account_create = true
-#   boot_disk = {
-#     image = "projects/debian-cloud/global/images/family/debian-10"
-#   }
-#   options = {
-#     spot                      = true
-#     termination_action        = "STOP"
-#   }
-#   metadata = {
-#     startup-script = <<EOF
-#       apt update
-#       apt install iputils-ping bind9-dnsutils
-#     EOF
-#   }
-# }
+module "test-vm-prod-ew4-0" {
+  source     = "../../../modules/compute-vm"
+  project_id = module.prod-spoke-project.project_id
+  zone       = "europe-west4-a"
+  name       = "test-vm-prod-ew4-0"
+  network_interfaces = [{
+    network = module.prod-spoke-vpc.self_link
+    # change the subnet name to match the values you are actually using
+    subnetwork = module.prod-spoke-vpc.subnet_self_links["europe-west4/prod-default-ew4"]
+  }]
+  tags                   = ["ew4", "ssh"]
+  service_account_create = true
+  boot_disk = {
+    image = "projects/debian-cloud/global/images/family/debian-10"
+  }
+  options = {
+    spot                      = true
+    termination_action        = "STOP"
+  }
+  metadata = {
+    startup-script = <<EOF
+      apt update
+      apt install iputils-ping bind9-dnsutils
+    EOF
+  }
+}
