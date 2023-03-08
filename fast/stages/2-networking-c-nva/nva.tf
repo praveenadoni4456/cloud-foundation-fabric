@@ -36,6 +36,8 @@ locals {
         var.custom_adv.gcp_landing_untrusted_primary,
         var.custom_adv.gcp_landing_untrusted_secondary,
       ]
+      enable_masquerading = true
+      non_masq_cidrs      = [var.custom_adv.rfc_1918_10,var.custom_adv.rfc_1918_172,var.custom_adv.rfc_1918_192]
     },
     {
       name = "trusted"
@@ -54,10 +56,13 @@ locals {
 module "nva-bgp-cloud-config" {
   for_each             = local.nva_locality
   source               = "../../../modules/cloud-config-container/simple-nva"
-  enable_bgp           = true
   enable_health_checks = true
   network_interfaces   = local.routing_config
-  frr_config           = "./bgp-files/${each.value.trigram}${each.value.zone}"
+  frr_config           = {
+    config_file     = "./bgp-files/${each.value.trigram}${each.value.zone}"
+    daemons_enabled = ["bgpd"]
+  }
+
 }
 
 resource "google_compute_address" "nva_static_ip_untrusted" {
@@ -122,6 +127,5 @@ module "nva" {
   }
   metadata = {
     user-data      = module.nva-bgp-cloud-config[each.key].cloud_config
-    startup-script = file("./data/nva-startup-script.sh")
   }
 }
