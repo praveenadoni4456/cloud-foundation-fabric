@@ -113,4 +113,11 @@ locals {
     ? "${path.module}/cloud-config.yaml"
     : var.cloud_config
   )
+
+  cloud_config = templatefile(local._template, {
+    enable_health_checks = var.enable_health_checks
+    files                = local._files
+    network_interfaces   = local._network_interfaces
+    optional_run_cmds    = local._optional_run_cmds
+  })
 }
