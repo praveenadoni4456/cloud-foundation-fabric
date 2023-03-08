@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,7 @@
  */
 
 locals {
-  cloud_config = templatefile(local.template, merge(local.config_variables, {
-    files                = local.files
-    enable_health_checks = var.enable_health_checks
-    network_interfaces   = local.network_interfaces
-  }))
-  frr_config = (
-    var.frr_config == null ? "${path.module}/files/frr/frr.conf" : var.frr_config
-  )
-  daemons = (
-    var.daemons == null ? "${path.module}/files/frr/deamons" : var.daemons
-  )
-  files = merge(
+  _files = merge(
     {
       "/var/run/nva/ipprefix_by_netmask.sh" = {
         content     = file("${path.module}/files/ipprefix_by_netmask.sh")
@@ -45,32 +34,90 @@ locals {
         permissions = attrs.permissions
       }
     },
-    var.enable_bgp ? {
+    try(var.frr_config != null, false) ? {
       "/etc/frr/daemons" = {
-        content     = templatefile(local.daemons, local.config_variables)
-        owner       = "frr"
+        content     = templatefile("${path.module}/files/frr/daemons", local._frr_daemons_enabled)
+        owner       = "root"
         permissions = "0744"
       }
       "/etc/frr/frr.conf" = {
-        content     = file(local.frr_config)
-        owner       = "frr"
+        content     = file(var.frr_config.config_file)
+        owner       = "root"
         permissions = "0744"
+      }
+      "/etc/systemd/system/frr.service" = {
+        content     = file("${path.module}/files/frr/frr.service")
+        owner       = "root"
+        permissions = "0644"
+      }
+      "/var/lib/docker/daemon.json" = {
+        content     = <<EOF
+        {
+          "live-restore": true,
+          "storage-driver": "overlay2",
+          "log-opts": {
+            "max-size": "1024m"
+          }
+        }
+        EOF
+        owner       = "root"
+        permissions = "0644"
       }
     } : {}
   )
-  network_interfaces = [
+
+  _frr_daemons = [
+    "zebra",
+    "bgpd",
+    "ospfd",
+    "ospf6d",
+    "ripd",
+    "ripngd",
+    "isisd",
+    "pimd",
+    "ldpd",
+    "nhrpd",
+    "eigrpd",
+    "babeld",
+    "sharpd",
+    "staticd",
+    "pbrd",
+    "bfdd",
+    "fabricd"
+  ]
+
+  _frr_daemons_enabled = try(
+    {
+      for daemon in local._frr_daemons :
+      "${daemon}_enabled" => contains(var.frr_config.daemons_enabled, daemon) ? "yes" : "no"
+  }, {})
+
+  _network_interfaces = [
     for index, interface in var.network_interfaces : {
-      name   = "eth${index}"
-      number = index
-      routes = interface.routes
+      name                = "eth${index}"
+      number              = index
+      routes              = interface.routes
+      enable_masquerading = interface.enable_masquerading != null ? interface.enable_masquerading : false
+      non_masq_cidrs      = interface.non_masq_cidrs != null ? interface.non_masq_cidrs : []
     }
   ]
-  template = (
+
+  _optional_run_cmds = (
+    try(var.frr_config != null, false)
+    ? concat(["systemctl start frr"], var.optional_run_cmds)
+    : var.optional_run_cmds
+  )
+
+  _template = (
     var.cloud_config == null
     ? "${path.module}/cloud-config.yaml"
     : var.cloud_config
   )
-  config_variables = merge(var.config_variables, {
-    enable_bgp = var.enable_bgp
+
+  cloud_config = templatefile(local._template, {
+    enable_health_checks = var.enable_health_checks
+    files                = local._files
+    network_interfaces   = local._network_interfaces
+    optional_run_cmds    = local._optional_run_cmds
   })
 }
